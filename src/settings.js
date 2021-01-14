@@ -1,28 +1,39 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Grid,
+  Container,
   Col,
   Row,
   Button,
   FormGroup,
-  ControlLabel,
   FormControl,
-  HelpBlock,
-  Checkbox,
-  Panel,
-  Glyphicon,
+  Form,
+  Card,
 } from 'react-bootstrap';
+import { FaCopy } from 'react-icons/fa';
 import jws from 'jws';
 import { event } from './analytics';
+import LanguageSelect from './components/language-select';
+import { defineMessages, FormattedMessage, injectIntl } from 'react-intl';
 const { remote, ipcRenderer, clipboard } = require('electron');
 const { openExternal } = remote.shell;
 
 class StatInkSettings extends React.Component {
   state = {
     apiToken: '',
-    statInkSaveButtonText: 'Save Token'
+    saved: false,
   };
+
+  messages = defineMessages({
+    saveToken: {
+      id: 'Settings.StatInk.ButtonText.saveToken',
+      defaultMessage: 'Save Token',
+    },
+    tokenSaved: {
+      id: 'Settings.StatInk.ButtonText.tokenSaved',
+      defaultMessage: 'Token Saved',
+    },
+  });
 
   componentDidMount() {
     this.getStatInkApiToken();
@@ -32,58 +43,67 @@ class StatInkSettings extends React.Component {
     this.setState({ apiToken: ipcRenderer.sendSync('getStatInkApiToken') });
   };
 
-  handleChange = e => {
+  handleChange = (e) => {
     this.setState({ apiToken: e.target.value });
   };
 
-  handleSubmit = e => {
+  handleSubmit = (e) => {
     event('stat.ink', 'saved-token');
     ipcRenderer.sendSync('setStatInkApiToken', this.state.apiToken);
-    this.setState({ statInkSaveButtonText: 'Token Saved' });
+    this.setState({ saved: true });
     setTimeout(() => {
-      this.setState({ statInkSaveButtonText: 'Save Token' });
+      this.setState({ saved: false });
     }, 1000);
     e.preventDefault();
   };
 
   render() {
+    const { saved } = this.state;
+    const { intl } = this.props;
     return (
-
-          <Panel header={<h3>Stat.ink Settings</h3>}>
+      <Card>
+        <Card.Header>
+          <FormattedMessage
+            id="Settings.StatInk.title"
+            defaultMessage="stat.ink API Token"
+          />
+        </Card.Header>
+        <Card.Body>
           <form onSubmit={this.handleSubmit}>
-          <FormGroup>
-            <ControlLabel>API Token</ControlLabel>
-            <HelpBlock>
-              Copy from{' '}
-              <a
-                onClick={() => openExternal('https://stat.ink/profile')}
-                style={{ cursor: 'pointer' }}
-              >
-                https://stat.ink/profile
-              </a>, paste below, and click Save
-            </HelpBlock>
-            <FormControl
-              type="text"
-              value={this.state.apiToken}
-              onChange={this.handleChange}
-            />
-          </FormGroup>
-          <Button
-            type="submit"
-            disabled={this.state.statInkSaveButtonText === 'Token Saved'}
-          >
-            {this.state.statInkSaveButtonText}
-          </Button>
+            <FormGroup>
+              <Form.Text>
+                <FormattedMessage
+                  id="Settings.StatInk.HelpMessage"
+                  defaultMessage="Copy API Token from {link}, paste below, and click Save"
+                  values={{
+                    link: (
+                      <button
+                        className="button-as-link"
+                        onClick={() => openExternal('https://stat.ink/profile')}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        https://stat.ink/profile
+                      </button>
+                    ),
+                  }}
+                />
+              </Form.Text>
+              <FormControl
+                type="text"
+                value={this.state.apiToken}
+                onChange={this.handleChange}
+              />
+            </FormGroup>
+            <Button type="submit" disabled={saved}>
+              {intl.formatMessage(
+                saved ? this.messages.tokenSaved : this.messages.saveToken
+              )}
+            </Button>
           </form>
-          </Panel>
+        </Card.Body>
+      </Card>
     );
   }
-}
-
-function handleLogoutClick(callback) {
-  event('user', 'logout');
-  ipcRenderer.sendSync('logout');
-  callback();
 }
 
 class GoogleAnalyticsCheckbox extends React.Component {
@@ -91,7 +111,7 @@ class GoogleAnalyticsCheckbox extends React.Component {
 
   componentDidMount() {
     this.setState({
-      enabled: ipcRenderer.sendSync('getFromStore', 'gaEnabled')
+      enabled: ipcRenderer.sendSync('getFromStore', 'gaEnabled'),
     });
   }
 
@@ -103,21 +123,33 @@ class GoogleAnalyticsCheckbox extends React.Component {
 
   render() {
     return (
-      <Checkbox checked={this.state.enabled} onClick={this.handleClick}>
-        Enabled
-      </Checkbox>
+      <Form.Check
+        type="checkbox"
+        checked={this.state.enabled}
+        onChange={this.handleClick}
+        label={
+          <FormattedMessage
+            id="Settings.GoogleAnalytics.EnabledCheckboxLabel"
+            defaultMessage="Enabled"
+          />
+        }
+      />
     );
   }
 }
 
 class IksmToken extends React.Component {
   state = {
-    cookie: { key: '', value: '', expires: '' }
+    cookie: '',
   };
 
   componentDidMount() {
     ipcRenderer.send('getIksmToken');
     ipcRenderer.on('iksmToken', this.handleToken);
+  }
+
+  componentWillUnmount() {
+    ipcRenderer.removeListener('iksmToken', this.handleToken);
   }
 
   handleToken = (e, cookie) => {
@@ -129,119 +161,195 @@ class IksmToken extends React.Component {
     return (
       <div>
         <h4>
-            iksm Token{' '}
-            <Glyphicon glyph='copy' style={{ fontSize: 20, cursor: 'pointer' }}  onClick={() => clipboard.writeText(cookie.value)} />
+          <FormattedMessage
+            id="Settings.Tokens.iksmToken.title"
+            defaultMessage="iksm Token"
+          />{' '}
+          {cookie.length > 0 ? (
+            <FaCopy
+              style={{ fontSize: 20, cursor: 'pointer' }}
+              onClick={() => {
+                clipboard.writeText(cookie);
+                event('settings', 'copy-iksm-token');
+              }}
+            />
+          ) : null}
         </h4>
-        Expiration: {cookie.expires}
       </div>
     );
   }
 }
 
-class LanguageSettings extends React.Component {
-  languages = [
-    { name: 'Default', code: '' },
-    { name: 'Deutsch', code: 'de' },
-    { name: 'English', code: 'en' },
-    { name: 'Español', code: 'es' },
-    { name: 'Francais', code: 'fr' },
-    { name: 'Italiano', code: 'it' },
-    { name: '日本語', code: 'ja' }
-  ];
+const LanguageSettings = ({ setLocale, locale }) => {
+  return (
+    <Card>
+      <Card.Header>
+        <FormattedMessage
+          id="Settings.Language.title"
+          defaultMessage="Language"
+        />
+      </Card.Header>
+      <Card.Body>
+        <FormattedMessage
+          id="Settings.Language.warning"
+          defaultMessage="Languages in the Splatnet API are limited by Nintendo regions, so some languages may not work correctly."
+        />
+        <LanguageSelect setLocale={setLocale} locale={locale} />
+      </Card.Body>
+    </Card>
+  );
+};
 
-  handleChange = e => {
-      this.props.setLocale(e.target.value);
-  };
+class SessionToken extends React.Component {
+  state = { token: '' };
+
+  componentDidMount() {
+    this.setState({
+      token: ipcRenderer.sendSync('getFromStore', 'sessionToken'),
+    });
+  }
 
   render() {
-    const { locale } = this.props;
+    const { token } = this.state;
+    const expUnix = token ? JSON.parse(jws.decode(token).payload).exp : 0;
+    const tokenExpiration = token
+      ? new Date(expUnix * 1000).toString()
+      : 'unknown';
+
     return (
-      <Row>
-        <Col md={12}>
-          <Panel header={<h3>Splatnet API Language</h3>}>
-              Languages are limited by Nintendo regions, so several of the languages
-              listed will not work. If you think your language should be supported,
-              please contact the developer.
-              <FormControl
-                value={locale}
-                id="languageSelect"
-                componentClass="select"
-                onChange={this.handleChange}
-              >
-                {this.languages.map(language =>
-                  <option key={language.code} value={language.code}>
-                    {language.name}
-                  </option>
-                )}
-              </FormControl>
-          </Panel>
-        </Col>
-      </Row>
+      <React.Fragment>
+        <h4>
+          <FormattedMessage
+            id="Settings.tokens.sessionToken"
+            defaultMessage="Session Token"
+            description="long term session token that can be used to obtain a new cookie"
+          />{' '}
+          {token.length > 0 ? (
+            <FaCopy
+              onClick={() => {
+                clipboard.writeText(token);
+                event('settings', 'copy-session-token');
+              }}
+              style={{ fontSize: 20, cursor: 'pointer' }}
+            />
+          ) : null}
+        </h4>
+        <FormattedMessage
+          id="Settings.Tokens.sessionTokenExpiration"
+          defaultMessage="Expiration: {tokenExpiration}"
+          values={{ tokenExpiration }}
+        />
+      </React.Fragment>
     );
   }
 }
 
-const SettingsScreen = ({ token, logoutCallback, setLocale, locale }) => {
-  const expUnix = JSON.parse(jws.decode(token).payload).exp;
-  const tokenExpiration = token
-    ? new Date(expUnix * 1000).toString()
-    : 'unknown';
+const GoogleAnalyticsSettings = () => {
   return (
-    <Grid fluid style={{ marginTop: 65, marginBotton: 30 }}>
-      <LanguageSettings setLocale={setLocale} locale={locale} />
-      <Row>
-        <Col md={12}>
-          <StatInkSettings />
-        </Col>
-      </Row>
-      <Row>
-        <Col md={12}>
-          <Panel header={<h3>Google Analytics</h3>}>
-              This program uses google analytics to track version uptake, activity,
-              bugs, and crashing. If you find this creepy you can disable this
-              feature below.
-              <GoogleAnalyticsCheckbox />
-          </Panel>
-        </Col>
-      </Row>
-      <Row>
-        <Col md={12}>
-          <Panel header={<h3>Debugging</h3>}>
-          <Link to="/testApi">
-            <Button>API Checker</Button>
-          </Link>
-          </Panel>
-        </Col>
-      </Row>
-      <Row>
-        <Col md={12}>
-            <Panel header={<h3>Nintendo User Info</h3>}>
-            <strong>DO NOT SHARE Session Token or iksm Token.</strong> These are
-            available here for debugging purposes. Sharing these could lead to
-            someone stealing your personal information.
-            <h4>
-                Session Token{' '}
-                <Glyphicon
-                    glyph='copy'
-                    onClick={() => clipboard.writeText(token)}
-                    style={{ fontSize: 20, cursor: 'pointer'   }}
-                />
-            </h4>
-            Expiration: {tokenExpiration}
-            <IksmToken />
-            <Button
-              block
-              bsStyle="danger"
-              style={{ marginTop: 10 }}
-              onClick={() => handleLogoutClick(logoutCallback)}
-            >
-              Logout
-            </Button>
-            </Panel>
-        </Col>
-      </Row>
-    </Grid>
+    <Card>
+      <Card.Header>
+        <FormattedMessage
+          id="Settings.GoogleAnalytics.title"
+          defaultMessage="Google Analytics"
+        />
+      </Card.Header>
+      <Card.Body>
+        <FormattedMessage
+          id="Settings.GoogleAnalytics.description"
+          defaultMessage={`
+            This program uses google analytics to track version uptake,
+            user activity, bugs, and crashing. If you find this creepy you can
+            disable this feature below.
+          `}
+        />
+        <GoogleAnalyticsCheckbox />
+      </Card.Body>
+    </Card>
   );
 };
 
-export default SettingsScreen;
+const Debugging = () => {
+  return (
+    <Card>
+      <Card.Header>
+        <FormattedMessage
+          id="Settings.Debugging.title"
+          defaultMessage="Debugging"
+        />
+      </Card.Header>
+      <Card.Body>
+        <Link to="/testApi">
+          <Button>
+            <FormattedMessage
+              id="Settings.Debugging.buttonText.openApiChecker"
+              defaultMessage="API Checker"
+            />
+          </Button>
+        </Link>
+      </Card.Body>
+    </Card>
+  );
+};
+
+const SecurityTokens = () => {
+  return (
+    <Card>
+      <Card.Header>
+        <FormattedMessage
+          id="Settings.Tokens.title"
+          defaultMessage="Splatnet 2 Access Tokens"
+        />
+      </Card.Header>
+      <Card.Body>
+        <FormattedMessage
+          id="Settings.Tokens.warning"
+          defaultMessage={`
+            <b>DO NOT SHARE Session Token or iksm Token.</b> These
+            are available here for debugging purposes. Sharing these could
+            lead to someone stealing your personal information.
+          `}
+          values={{
+            b: (chunks) => <strong>{chunks}</strong>,
+          }}
+        />
+
+        <SessionToken />
+        <IksmToken />
+      </Card.Body>
+    </Card>
+  );
+};
+
+const SettingsScreen = ({ token, logoutCallback, setLocale, locale, intl }) => {
+  return (
+    <Container fluid style={{ marginTop: '1rem', marginBotton: 30 }}>
+      <Row className="mb-3">
+        <Col md={12}>
+          <LanguageSettings setLocale={setLocale} locale={locale} />
+        </Col>
+      </Row>
+      <Row className="mb-3">
+        <Col md={12}>
+          <StatInkSettings intl={intl} />
+        </Col>
+      </Row>
+      <Row className="mb-3">
+        <Col md={12}>
+          <GoogleAnalyticsSettings />
+        </Col>
+      </Row>
+      <Row className="mb-3">
+        <Col md={12}>
+          <Debugging />
+        </Col>
+      </Row>
+      <Row>
+        <Col md={12}>
+          <SecurityTokens />
+        </Col>
+      </Row>
+    </Container>
+  );
+};
+
+export default injectIntl(SettingsScreen);

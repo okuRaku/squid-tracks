@@ -6,28 +6,37 @@ const { ipcRenderer, clipboard } = require('electron');
 class ApiTester extends React.Component {
   state = {
     reply: {},
-    url: ''
+    url: '',
   };
 
   urls = [
     'league_match_ranking/17073112T/ALL',
     'onlineshop/merchandises',
     'results',
-    'results/180',
-    'nickname_and_icon',
+    'results/{battle#}',
+    'nickname_and_icon?id={principal_id}',
     'schedules',
+    'coop_schedules',
+    'coop_results',
+    'coop_results/{battle_number}',
     'records/hero',
     'timeline',
     'data/stages',
     'records',
     'festivals/active',
     'festivals/pasts',
-    'festivals/2050/votes'
+    'festivals/{fest_id}/rankings',
+    'festivals/{fest_id}/votes',
+    'festivals/{fest_id}/results',
+    'x_power_ranking/180401T00_180601T00/summary',
+    'x_power_ranking/180401T00_180601T00/splat_zones?page=1',
     // POST 'onlineshop/order/4780952683920142604',
     // POST 'share/profile'
+    // POST 'share/results/summary'
     // POST 'share/results/630'
     // POST 'share/challenges/tenflod_squid_research_lab'
     // POST 'share/challenges/great_pyramid_at_giza'
+    // POST 'share/challenges_season_2/...'
   ];
 
   handleButtonClick = async () => {
@@ -35,11 +44,11 @@ class ApiTester extends React.Component {
     this.setState({ reply: league });
   };
 
-  handleUrlChange = e => {
+  handleUrlChange = (e) => {
     this.setState({ url: e.target.value });
   };
 
-  handleSelectChange = e => {
+  handleSelectChange = (e) => {
     this.setState({ url: e.target.value });
   };
 
@@ -67,11 +76,11 @@ class ApiTester extends React.Component {
           onChange={this.handleUrlChange}
         />
         <select onClick={this.handleSelectChange}>
-          {this.urls.map(url =>
+          {this.urls.map((url) => (
             <option key={url} value={url}>
               {url}
             </option>
-          )}
+          ))}
         </select>
         <Json data={this.state.reply} invertTheme={false} />
       </div>

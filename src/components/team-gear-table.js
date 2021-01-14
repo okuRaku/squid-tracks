@@ -2,7 +2,7 @@ import React from 'react';
 import { Table, Image } from 'react-bootstrap';
 import { FormattedMessage } from 'react-intl';
 
-const TeamHeader = ({ player = { player: {} } }) =>
+const TeamHeader = ({ player = { player: {} } }) => (
   <thead>
     <tr>
       <th>
@@ -31,7 +31,8 @@ const TeamHeader = ({ player = { player: {} } }) =>
         />
       </th>
     </tr>
-  </thead>;
+  </thead>
+);
 
 const GearCell = ({ gear }) => {
   const mainHeight = 30;
@@ -64,21 +65,20 @@ const AbilityCell = ({ skills }) => {
   return (
     <td style={{ textAlign: 'left', background: bgcolor }}>
       <Image
-        circle
+        roundedCircle
         src={`https://app.splatoon2.nintendo.net${skills.main.image}`}
         style={{ maxHeight: mainHeight, background }}
         alt={skills.main.name}
       />
-      {skills.subs.map(
-        skill =>
-          skill
-            ? <Image
-                circle
-                src={`https://app.splatoon2.nintendo.net${skill.image}`}
-                style={{ maxHeight: subHeight, background }}
-                alt={skill.name}
-              />
-            : null
+      {skills.subs.map((skill) =>
+        skill ? (
+          <Image
+            roundedCircle
+            src={`https://app.splatoon2.nintendo.net${skill.image}`}
+            style={{ maxHeight: subHeight, background }}
+            alt={skill.name}
+          />
+        ) : null
       )}
     </td>
   );
@@ -87,13 +87,10 @@ const AbilityCell = ({ skills }) => {
 const PlayerRow = ({ player }) => {
   return (
     <tr>
-      <td>
-        {player.player.nickname}
-      </td>
+      <td>{player.player.nickname}</td>
       <td style={{ textAlign: 'center', background: 'darkgrey' }}>
         <Image
-          src={`https://app.splatoon2.nintendo.net${player.player.weapon
-            .thumbnail}`}
+          src={`https://app.splatoon2.nintendo.net${player.player.weapon.thumbnail}`}
           style={{ maxHeight: 30 }}
           alt={player.player.weapon.name}
         />
@@ -110,12 +107,12 @@ const PlayerRow = ({ player }) => {
 
 const TeamStatTable = ({ result, team }) => {
   return (
-    <Table striped bordered condensed hover>
+    <Table className="mb-0" size="sm" striped bordered hover>
       <TeamHeader player={team[0]} />
       <tbody>
-        {team.map(player =>
-          <PlayerRow key={player.player.nickname} player={player} />
-        )}
+        {team.map((player) => (
+          <PlayerRow key={player.player.principal_id} player={player} />
+        ))}
       </tbody>
     </Table>
   );

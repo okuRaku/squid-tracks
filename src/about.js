@@ -1,28 +1,36 @@
 import React from 'react';
-import { Grid, Row, Col, Jumbotron } from 'react-bootstrap';
+import { Container, Row, Col, Jumbotron } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
+import { FormattedMessage } from 'react-intl';
 const { shell, app } = require('electron').remote;
 const { openExternal } = shell;
 const appVersion = app.getVersion();
 
-const AboutPage = () =>
-  <Grid fluid style={{ marginTop: 65 }}>
+const AboutPage = () => (
+  <Container fluid style={{ paddingTop: '1rem' }}>
     <Row>
       <Col md={12}>
         <Jumbotron style={{ textAlign: 'center' }}>
-          <h1>SquidTracks</h1>
-          <h2>A Splatnet 2 Client for your Desktop</h2>
+          <h1 style={{ textAlign: 'center', width: '100%' }}>SquidTracks</h1>
+          <h2 style={{ textAlign: 'center', width: '100%', marginTop: 0 }}>
+            <FormattedMessage
+              id="login.tagLine"
+              defaultMessage="An Unofficial Splatnet Client for your Desktop"
+            />
+          </h2>
           <h5>
-            {`Beta Version ${appVersion} `}
-            <a
+            {`Version ${appVersion} `}
+            <button
+              className="button-as-link"
               onClick={() =>
                 openExternal(
                   'https://github.com/hymm/squid-tracks/blob/master/CHANGELOG.md'
-                )}
+                )
+              }
               style={{ cursor: 'pointer' }}
             >
               Change Log
-            </a>
+            </button>
           </h5>
         </Jumbotron>
         <h2>Introduction</h2>
@@ -46,19 +54,20 @@ const AboutPage = () =>
         </p>
         <h2>Stat.ink Integration</h2>
         <p>
-          <a
+          <button
+            className="button-as-link"
             onClick={() => openExternal('https://stat.ink/')}
             style={{ cursor: 'pointer' }}
           >
             Stat.ink
-          </a>{' '}
+          </button>{' '}
           is a website that aggregates splatoon battle data and presents it on
           the web. Splatnet only saves the last 50 games, so this is a way to{' '}
         </p>
         <h4>Setup</h4>
         <ol>
           <li>
-            Go to {' '}
+            Go to{' '}
             <Link to="/settings">
               <strong>Settings</strong>
             </Link>{' '}
@@ -131,26 +140,29 @@ const AboutPage = () =>
         disable tracking in{' '}
         <Link to="/settings">
           <strong>Settings</strong>
-        </Link>.
-        <h2>For Help and Bug Filing</h2>
+        </Link>
+        .<h2>For Help and Bug Filing</h2>
         <p>Send cries for help, bug reports, and feature requests to</p>
         <p>
-          <a
+          <button
+            className="button-as-link"
             onClick={() =>
-              openExternal('https://github.com/hymm/squid-tracks/issues')}
+              openExternal('https://github.com/hymm/squid-tracks/issues')
+            }
             style={{ cursor: 'pointer' }}
           >
             Github Issues
-          </a>
+          </button>
         </p>
         <p>
           Twitter:{' '}
-          <a
+          <button
+            className="button-as-link"
             onClick={() => openExternal('https://twitter.com/SquidTracks')}
             style={{ cursor: 'pointer' }}
           >
             @SquidTracks
-          </a>
+          </button>
         </p>
         <h2>Releases</h2>
         <p>
@@ -159,28 +171,33 @@ const AboutPage = () =>
         </p>
         <p>
           If there are problems with that, you can find releases at{' '}
-          <a
+          <button
+            className="button-as-link"
             onClick={() =>
-              openExternal('https://github.com/hymm/squid-tracks/releases')}
+              openExternal('https://github.com/hymm/squid-tracks/releases')
+            }
             style={{ cursor: 'pointer' }}
           >
             Github Releases
-          </a>
+          </button>
         </p>
         <p>
-          <a
+          <button
+            className="button-as-link"
             onClick={() =>
               openExternal(
                 'https://github.com/hymm/squid-tracks/blob/master/README.md'
-              )}
+              )
+            }
             style={{ cursor: 'pointer' }}
           >
             Click Here for More information
-          </a>{' '}
+          </button>{' '}
           including the Roadmap for future Releases
         </p>
       </Col>
     </Row>
-  </Grid>;
+  </Container>
+);
 
 export default AboutPage;

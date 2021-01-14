@@ -6,28 +6,29 @@ import { event } from '../analytics';
 class StatInkManualButton extends React.Component {
   messages = defineMessages({
     default: {
-        id: 'results.uploadManual.default',
-        defaultMessage: 'Upload to stat.ink',
-        description: 'default upload manual button text',
+      id: 'results.uploadManual.default',
+      defaultMessage: 'Upload to stat.ink',
+      description: 'default upload manual button text',
     },
     wroteBattle: {
-        id: 'results.uploadManual.wroteBattle',
-        defaultMessage: 'Wrote Battle #{battle_number}',
+      id: 'results.uploadManual.wroteBattle',
+      defaultMessage: 'Wrote Battle #{battle_number}',
     },
     writingBattle: {
-        id: 'results.uploadManual.writingBattle',
-        defaultMessage: 'Writing Battle #{battle_number}',
+      id: 'results.uploadManual.writingBattle',
+      defaultMessage: 'Writing Battle #{battle_number}',
     },
     uploaded: {
-        id: 'results.uploadManual.uploaded',
-        defaultMessage: 'Uploaded',
-        description: 'text to display if battle has been uploaded already',
-    }
-  })
+      id: 'results.uploadManual.uploaded',
+      defaultMessage: 'Uploaded',
+      description: 'text to display if battle has been uploaded already',
+    },
+  });
 
   state = {
     buttonText: this.props.intl.formatMessage(this.messages.default),
-    writingToStatInk: false
+    writingToStatInk: false,
+    writingBattleNumber: 0,
   };
 
   componentDidMount() {
@@ -44,21 +45,24 @@ class StatInkManualButton extends React.Component {
   }
 
   handleWroteBattleManual = (e, info) => {
-    const { currentBattle, setStatInkInfo, intl } = this.props;
+    const { setStatInkInfo, intl } = this.props;
+    const { writingBattleNumber } = this.state;
     event('stat.ink', 'wrote-battle', 'manual');
     this.setState({
-        buttonText: intl.formatMessage(this.messages.wroteBattle, {battle_number: currentBattle})
+      buttonText: intl.formatMessage(this.messages.wroteBattle, {
+        battle_number: writingBattleNumber,
+      }),
     });
 
     if (info.username) {
-      setStatInkInfo(currentBattle, info);
+      setStatInkInfo(writingBattleNumber, info);
     }
 
     setTimeout(
       () =>
         this.setState({
           buttonText: intl.formatMessage(this.messages.default),
-          writingToStatInk: false
+          writingToStatInk: false,
         }),
       5000
     );
@@ -70,7 +74,7 @@ class StatInkManualButton extends React.Component {
       () =>
         this.setState({
           buttonText: intl.formatMessage(this.messages.default),
-          writingToStatInk: false
+          writingToStatInk: false,
         }),
       5000
     );
@@ -79,8 +83,11 @@ class StatInkManualButton extends React.Component {
   handleClick = () => {
     const { currentBattle, result, intl } = this.props;
     this.setState({
-      buttonText: intl.formatMessage(this.messages.writingBattle, { battle_number : currentBattle }),
-      writingToStatInk: true
+      buttonText: intl.formatMessage(this.messages.writingBattle, {
+        battle_number: currentBattle,
+      }),
+      writingToStatInk: true,
+      writingBattleNumber: result.battle_number,
     });
     ipcRenderer.send('writeToStatInk', result, 'manual');
   };
@@ -91,10 +98,13 @@ class StatInkManualButton extends React.Component {
 
     return (
       <Button
+        variant="outline-secondary"
         onClick={this.handleClick}
         disabled={disabled || writingToStatInk || uploaded}
       >
-        {uploaded && !writingToStatInk ? intl.formatMessage(this.messages.uploaded) : buttonText}
+        {uploaded && !writingToStatInk
+          ? intl.formatMessage(this.messages.uploaded)
+          : buttonText}
       </Button>
     );
   }

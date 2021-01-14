@@ -3,31 +3,32 @@ import {
   ButtonToolbar,
   Button,
   ButtonGroup,
-  Glyphicon,
   DropdownButton,
-  MenuItem
+  Dropdown,
 } from 'react-bootstrap';
+import { FaCaretLeft, FaCaretRight } from 'react-icons/fa';
 import { defineMessages, injectIntl } from 'react-intl';
 import { ipcRenderer } from 'electron';
 import StatInkManualButton from './results-upload-manual-button';
 import ResultsPoller from './results-poller-button';
 import { event } from '../analytics';
+import ResultsUploadAll from './results-upload-all-battles';
 
 class ResultControl extends React.Component {
   messages = defineMessages({
     refresh: {
       id: 'results.refreshButton.refresh',
-      defaultMessage: 'Refresh'
+      defaultMessage: 'Refresh',
     },
     refreshed: {
       id: 'results.refreshButton.refreshed',
-      defaultMessage: 'Refreshed'
-    }
+      defaultMessage: 'Refreshed',
+    },
   });
 
   state = {
     tokenExists: false,
-    refreshing: false
+    refreshing: false,
   };
 
   componentDidMount() {
@@ -44,7 +45,7 @@ class ResultControl extends React.Component {
       results,
       setStatInkInfo,
       statInk,
-      intl
+      intl,
     } = this.props;
     const { tokenExists } = this.state;
 
@@ -52,8 +53,15 @@ class ResultControl extends React.Component {
     const uploaded = statInk ? statInk[currentBattle] != null : false;
 
     return (
-      <ButtonToolbar style={{ marginBottom: 10 }}>
+      <ButtonToolbar
+        size="sm"
+        variant="outline-dark"
+        style={{ marginBottom: 10 }}
+      >
         <Button
+          size="sm"
+          className="mr-2"
+          variant="outline-secondary"
           onClick={() => {
             getResults();
             event('results', 'refresh');
@@ -66,31 +74,38 @@ class ResultControl extends React.Component {
             ? intl.formatMessage(this.messages.refreshed)
             : intl.formatMessage(this.messages.refresh)}
         </Button>
-        <ButtonGroup>
+        <ButtonGroup className="mr-2" size="sm">
           <Button
+            variant="outline-secondary"
             onClick={() => changeResult(resultIndex + 1)}
             disabled={resultIndex === results.length - 1}
           >
-            <Glyphicon glyph="triangle-left" />
+            <FaCaretLeft />
           </Button>
-          <DropdownButton title={currentBattle} id={'battles'}>
-            {results.map((result, idx) =>
-              <MenuItem
+          <DropdownButton
+            as={ButtonGroup}
+            variant="outline-secondary"
+            title={currentBattle}
+            id={'battles'}
+          >
+            {results.map((result, idx) => (
+              <Dropdown.Item
                 key={result.battle_number}
                 onClick={() => changeResult(idx)}
               >
                 {result.battle_number}
-              </MenuItem>
-            )}
+              </Dropdown.Item>
+            ))}
           </DropdownButton>
           <Button
+            variant="outline-secondary"
             onClick={() => changeResult(resultIndex - 1)}
             disabled={resultIndex === 0}
           >
-            <Glyphicon glyph="triangle-right" />
+            <FaCaretRight />
           </Button>
         </ButtonGroup>
-        <ButtonGroup>
+        <ButtonGroup className="mr-2">
           <StatInkManualButton
             result={result}
             currentBattle={currentBattle}
@@ -100,11 +115,13 @@ class ResultControl extends React.Component {
           />
         </ButtonGroup>
         <ResultsPoller
+          className="mr-1"
           getResults={getResults}
           result={result}
           disabled={!tokenExists}
           setStatInkInfo={setStatInkInfo}
         />
+        <ResultsUploadAll statInk={statInk} setStatInkInfo={setStatInkInfo} />
       </ButtonToolbar>
     );
   }

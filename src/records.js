@@ -1,76 +1,82 @@
 import React from 'react';
-import { Grid, Row, Col, ButtonToolbar, Button } from 'react-bootstrap';
+import { Container, Row, Col, ButtonToolbar, Button } from 'react-bootstrap';
 import StageCard from './components/stage-card';
 import PlayerCard from './components/player-card';
 import WeaponCard from './components/weapon-card';
+import LeagueCard from './components/league-card';
+import FesCard from './components/fes-card';
 import { event } from './analytics';
-import { ipcRenderer } from 'electron';
 import { defineMessages, injectIntl } from 'react-intl';
+import { useSplatnet } from './splatnet-provider';
 
-class ResultsContainer extends React.Component {
+class RecordsContainer extends React.Component {
   messages = defineMessages({
     refresh: {
       id: 'records.refreshButton.refresh',
-      defaultMessage: 'Refresh'
+      defaultMessage: 'Refresh',
     },
     refreshed: {
       id: 'records.refreshButton.refreshed',
-      defaultMessage: 'Refreshed'
-    }
+      defaultMessage: 'Refreshed',
+    },
   });
 
   state = {
-    records: {
-      records: {}
-    },
-    refreshing: false
+    refreshing: false,
   };
 
   componentDidMount() {
-    this.getRecords();
-  }
-
-  getRecords() {
-    const records = ipcRenderer.sendSync('getApi', 'records');
-    this.setState({ records: records });
+    this.props.splatnet.comm.updateRecords();
   }
 
   render() {
-    const { intl } = this.props;
+    const { intl, splatnet } = this.props;
+    const { records } = splatnet.current;
+    const { refreshing } = this.state;
+
     return (
-      <div>
+      <>
         <ButtonToolbar style={{ marginBottom: '10px' }}>
           <Button
+            variant="outline-secondary"
             onClick={() => {
               event('records', 'refresh');
-              this.getRecords();
+              splatnet.comm.updateRecords();
               this.setState({ refreshing: true });
               setTimeout(() => this.setState({ refreshing: false }), 2000);
             }}
-            disabled={this.state.refreshing}
+            disabled={refreshing}
           >
             {this.state.refreshing
               ? intl.formatMessage(this.messages.refreshed)
               : intl.formatMessage(this.messages.refresh)}
           </Button>
         </ButtonToolbar>
-        <PlayerCard records={this.state.records.records} />
-        <StageCard records={this.state.records.records} />
-        <WeaponCard records={this.state.records.records} />
-      </div>
+        <PlayerCard className="mb-3" records={records.records} />
+        <StageCard className="mb-3" records={records.records} />
+        <WeaponCard className="mb-3" records={records.records} />
+        <LeagueCard className="mb-3" records={records.records} />
+        <FesCard records={records.records} festivals={records.festivals} />
+      </>
     );
   }
 }
 
-const ResultsContainerIntl = injectIntl(ResultsContainer);
+const RecordsContainerIntl = injectIntl(RecordsContainer);
 
-const Records = () =>
-  <Grid fluid style={{ marginTop: 65 }}>
+const Records = ({ splatnet }) => (
+  <Container fluid style={{ marginTop: '1rem' }}>
     <Row>
       <Col md={12}>
-        <ResultsContainerIntl />
+        <RecordsContainerIntl splatnet={splatnet} />
       </Col>
     </Row>
-  </Grid>;
+  </Container>
+);
 
-export default Records;
+const SubscribedRecords = () => {
+  const splatnet = useSplatnet();
+  return <Records splatnet={splatnet} />;
+};
+
+export default SubscribedRecords;
